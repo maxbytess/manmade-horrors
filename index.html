@@ -1,0 +1,1508 @@
+<!DOCTYPE html>
+<html lang="tr">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no" />
+  <meta name="mobile-web-app-capable" content="yes" />
+  <meta name="apple-mobile-web-app-capable" content="yes" />
+  <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent" />
+  <meta name="theme-color" content="#000000" />
+  <title>Özel Mesaj Portalı</title>
+  <style>
+    :root {
+      --bg: #000000;
+      --surface: #0a0a0c;
+      --surface-elevated: #121216;
+      --border: #1e1e24;
+      --border-hover: #32323c;
+      --text: #f3f4f6;
+      --text-muted: #9ca3af;
+      --accent: #6366f1;
+      --accent-hover: #4f46e5;
+      --danger: #ef4444;
+      --danger-bg: rgba(239, 68, 68, 0.14);
+    }
+
+    * {
+      box-sizing: border-box;
+      margin: 0;
+      padding: 0;
+      -webkit-tap-highlight-color: transparent;
+    }
+
+    html, body {
+      width: 100%;
+      min-height: 100%;
+      background-color: var(--bg);
+      color: var(--text);
+      font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Noto Sans", Ubuntu, Cantarell, Helvetica, Arial, sans-serif;
+      overscroll-behavior: none;
+      -webkit-user-select: none;
+      -moz-user-select: none;
+      -ms-user-select: none;
+      user-select: none;
+    }
+
+    body {
+      min-height: 100vh;
+      display: flex;
+      flex-direction: column;
+      justify-content: space-between;
+      overflow-x: hidden;
+      transition: background-color 0.15s ease;
+    }
+
+    body.lock-mode {
+      overflow: hidden;
+      touch-action: manipulation;
+    }
+
+    body.alarm-flash {
+      background-color: #290303;
+      animation: shake 0.4s ease-in-out both;
+    }
+
+    @keyframes shake {
+      10%, 90% { transform: translate3d(-4px, 0, 0); }
+      20%, 80% { transform: translate3d(6px, 0, 0); }
+      30%, 50%, 70% { transform: translate3d(-8px, 0, 0); }
+      40%, 60% { transform: translate3d(8px, 0, 0); }
+    }
+
+    .security-banner {
+      position: fixed;
+      top: 0;
+      left: 0;
+      right: 0;
+      z-index: 150;
+      background: #dc2626;
+      color: #ffffff;
+      font-size: 0.78rem;
+      font-weight: 700;
+      letter-spacing: 0.04em;
+      text-align: center;
+      padding: 10px 16px;
+      transform: translateY(-100%);
+      transition: transform 0.25s ease;
+      box-shadow: 0 8px 25px rgba(220, 38, 38, 0.5);
+    }
+
+    .security-banner.show {
+      transform: translateY(0);
+    }
+
+    header {
+      width: 100%;
+      max-width: 960px;
+      margin: 0 auto;
+      padding: 18px 20px;
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      border-bottom: 1px solid rgba(255, 255, 255, 0.05);
+      z-index: 10;
+    }
+
+    .brand {
+      display: flex;
+      align-items: center;
+      gap: 10px;
+      font-size: 0.92rem;
+      font-weight: 600;
+      letter-spacing: 0.02em;
+      color: var(--text);
+    }
+
+    .brand-dot {
+      width: 8px;
+      height: 8px;
+      border-radius: 50%;
+      background: var(--accent);
+      box-shadow: 0 0 12px var(--accent);
+    }
+
+    .brand-dot.locked {
+      background: var(--danger);
+      box-shadow: 0 0 12px var(--danger);
+    }
+
+    .login-trigger {
+      background: var(--surface-elevated);
+      color: var(--text);
+      border: 1px solid var(--border);
+      padding: 9px 15px;
+      border-radius: 10px;
+      font-size: 0.84rem;
+      font-weight: 500;
+      cursor: pointer;
+      transition: all 0.2s ease;
+    }
+
+    .login-trigger:hover {
+      border-color: var(--border-hover);
+      background: #18181f;
+    }
+
+    main {
+      flex: 1;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      padding: 20px 16px;
+      width: 100%;
+    }
+
+    .card {
+      width: 100%;
+      max-width: 680px;
+      background: var(--surface);
+      border: 1px solid var(--border);
+      border-radius: 22px;
+      padding: 36px 24px;
+      box-shadow: 0 25px 60px rgba(0, 0, 0, 0.9);
+      transition: all 0.25s ease;
+    }
+
+    @media (min-width: 640px) {
+      .card {
+        padding: 46px 40px;
+      }
+    }
+
+    .hidden {
+      display: none !important;
+    }
+
+    .landing-content {
+      text-align: center;
+    }
+
+    .badge {
+      display: inline-flex;
+      align-items: center;
+      gap: 6px;
+      padding: 6px 13px;
+      border-radius: 999px;
+      background: rgba(99, 102, 241, 0.1);
+      border: 1px solid rgba(99, 102, 241, 0.25);
+      color: #a5b4fc;
+      font-size: 0.74rem;
+      font-weight: 600;
+      letter-spacing: 0.06em;
+      text-transform: uppercase;
+      margin-bottom: 22px;
+    }
+
+    h1 {
+      font-size: clamp(1.65rem, 6vw, 2.3rem);
+      font-weight: 800;
+      letter-spacing: -0.02em;
+      line-height: 1.2;
+      margin-bottom: 14px;
+      color: #ffffff;
+    }
+
+    .subtitle {
+      color: var(--text-muted);
+      font-size: 0.96rem;
+      line-height: 1.6;
+      max-width: 440px;
+      margin: 0 auto 30px;
+    }
+
+    .primary-btn {
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+      gap: 10px;
+      width: 100%;
+      max-width: 340px;
+      min-height: 52px;
+      background: var(--accent);
+      color: #ffffff;
+      border: none;
+      border-radius: 14px;
+      padding: 15px 24px;
+      font-size: 0.98rem;
+      font-weight: 600;
+      cursor: pointer;
+      transition: transform 0.15s ease, background 0.2s ease, box-shadow 0.2s ease;
+      box-shadow: 0 10px 28px rgba(99, 102, 241, 0.28);
+    }
+
+    .primary-btn:hover {
+      background: var(--accent-hover);
+      transform: translateY(-1px);
+    }
+
+    .primary-btn:active {
+      transform: scale(0.98);
+    }
+
+    .quick-auth {
+      margin-top: 32px;
+      padding-top: 22px;
+      border-top: 1px solid var(--border);
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      gap: 10px;
+    }
+
+    .quick-auth-label {
+      font-size: 0.78rem;
+      color: var(--text-muted);
+    }
+
+    .quick-auth-row {
+      display: flex;
+      gap: 8px;
+      width: 100%;
+      max-width: 340px;
+    }
+
+    input[type="password"], input[type="text"] {
+      width: 100%;
+      min-height: 46px;
+      background: #050507;
+      border: 1px solid var(--border);
+      color: var(--text);
+      padding: 10px 14px;
+      border-radius: 11px;
+      font-size: 16px;
+      outline: none;
+      transition: border-color 0.2s ease;
+      -webkit-user-select: text;
+      -moz-user-select: text;
+      user-select: text;
+    }
+
+    input:focus {
+      border-color: var(--accent);
+    }
+
+    .secondary-btn {
+      background: var(--surface-elevated);
+      color: var(--text);
+      border: 1px solid var(--border);
+      min-height: 46px;
+      padding: 10px 18px;
+      border-radius: 11px;
+      font-size: 0.88rem;
+      font-weight: 600;
+      cursor: pointer;
+      white-space: nowrap;
+      transition: all 0.2s ease;
+    }
+
+    .secondary-btn:hover {
+      border-color: var(--border-hover);
+      background: #1b1b22;
+    }
+
+    .alert-box {
+      margin-top: 10px;
+      padding: 10px 14px;
+      border-radius: 10px;
+      background: var(--danger-bg);
+      border: 1px solid rgba(239, 68, 68, 0.4);
+      color: #fca5a5;
+      font-size: 0.83rem;
+      font-weight: 500;
+      width: 100%;
+      max-width: 340px;
+      text-align: center;
+    }
+
+    .quiz-header {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      margin-bottom: 14px;
+      font-size: 0.82rem;
+      color: var(--text-muted);
+    }
+
+    .lock-pill {
+      display: inline-flex;
+      align-items: center;
+      gap: 6px;
+      color: #fca5a5;
+      background: rgba(239, 68, 68, 0.12);
+      border: 1px solid rgba(239, 68, 68, 0.3);
+      padding: 4px 10px;
+      border-radius: 999px;
+      font-size: 0.72rem;
+      font-weight: 600;
+    }
+
+    .progress-bar {
+      width: 100%;
+      height: 5px;
+      background: #16161d;
+      border-radius: 999px;
+      overflow: hidden;
+      margin-bottom: 24px;
+    }
+
+    .progress-fill {
+      height: 100%;
+      background: var(--accent);
+      width: 0%;
+      transition: width 0.3s ease;
+    }
+
+    .question-title {
+      font-size: 1.06rem;
+      font-weight: 600;
+      line-height: 1.55;
+      margin-bottom: 14px;
+      color: #ffffff;
+    }
+
+    .code-snippet {
+      background: #040406;
+      border: 1px solid var(--border);
+      border-radius: 12px;
+      padding: 13px 15px;
+      font-family: "JetBrains Mono", "Fira Code", ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, monospace;
+      font-size: 0.84rem;
+      color: #e5e7eb;
+      margin-bottom: 18px;
+      overflow-x: auto;
+      line-height: 1.55;
+      white-space: pre-wrap;
+      word-break: break-word;
+    }
+
+    .options-list {
+      display: flex;
+      flex-direction: column;
+      gap: 10px;
+      margin-bottom: 22px;
+    }
+
+    .option-btn {
+      width: 100%;
+      min-height: 50px;
+      text-align: left;
+      background: var(--surface-elevated);
+      border: 1px solid var(--border);
+      color: var(--text);
+      padding: 13px 15px;
+      border-radius: 12px;
+      font-size: 0.89rem;
+      line-height: 1.45;
+      cursor: pointer;
+      transition: all 0.16s ease;
+      display: flex;
+      align-items: flex-start;
+      gap: 11px;
+    }
+
+    .option-btn:hover {
+      border-color: var(--accent);
+      background: #16161e;
+    }
+
+    .option-btn:active {
+      transform: scale(0.99);
+    }
+
+    .option-btn.selected {
+      border-color: var(--accent);
+      background: rgba(99, 102, 241, 0.14);
+    }
+
+    .option-key {
+      font-family: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, monospace;
+      font-weight: 700;
+      color: #a5b4fc;
+      min-width: 20px;
+      padding-top: 1px;
+    }
+
+    .quiz-actions {
+      display: flex;
+      flex-direction: column-reverse;
+      gap: 10px;
+    }
+
+    @media (min-width: 480px) {
+      .quiz-actions {
+        flex-direction: row;
+        justify-content: space-between;
+        align-items: center;
+      }
+    }
+
+    .skip-btn {
+      background: transparent;
+      border: 1px solid var(--border);
+      color: var(--text-muted);
+      min-height: 46px;
+      padding: 10px 16px;
+      border-radius: 11px;
+      font-size: 0.85rem;
+      cursor: pointer;
+      transition: all 0.2s ease;
+      text-align: center;
+    }
+
+    .skip-btn:hover {
+      color: var(--text);
+      border-color: var(--border-hover);
+      background: rgba(255, 255, 255, 0.03);
+    }
+
+    .next-btn {
+      background: var(--accent);
+      color: #fff;
+      border: none;
+      min-height: 48px;
+      padding: 12px 22px;
+      border-radius: 11px;
+      font-size: 0.92rem;
+      font-weight: 600;
+      cursor: pointer;
+      transition: background 0.2s ease;
+    }
+
+    .next-btn:disabled {
+      opacity: 0.4;
+      cursor: not-allowed;
+    }
+
+    .error-404 {
+      text-align: center;
+      padding: 16px 0;
+    }
+
+    .error-code {
+      font-size: clamp(4rem, 15vw, 5.5rem);
+      font-weight: 900;
+      letter-spacing: -0.04em;
+      color: #27272a;
+      line-height: 1;
+      margin-bottom: 12px;
+    }
+
+    .error-title {
+      font-size: 1.35rem;
+      font-weight: 700;
+      margin-bottom: 10px;
+      color: #ffffff;
+    }
+
+    .error-desc {
+      color: var(--text-muted);
+      font-size: 0.92rem;
+      line-height: 1.6;
+      max-width: 380px;
+      margin: 0 auto 24px;
+    }
+
+    .reveal-box {
+      line-height: 1.78;
+    }
+
+    .reveal-tag {
+      display: inline-block;
+      padding: 5px 11px;
+      border-radius: 8px;
+      background: rgba(16, 185, 129, 0.12);
+      border: 1px solid rgba(16, 185, 129, 0.3);
+      color: #6ee7b7;
+      font-size: 0.76rem;
+      font-weight: 600;
+      margin-bottom: 16px;
+    }
+
+    .reveal-box h2 {
+      font-size: 1.45rem;
+      margin-bottom: 16px;
+      color: #ffffff;
+      line-height: 1.3;
+    }
+
+    .reveal-box p {
+      color: #d1d5db;
+      font-size: 0.95rem;
+      margin-bottom: 15px;
+    }
+
+    .score-pill {
+      display: inline-block;
+      margin-top: 8px;
+      padding: 8px 14px;
+      background: var(--surface-elevated);
+      border: 1px solid var(--border);
+      border-radius: 10px;
+      font-size: 0.83rem;
+      color: var(--text-muted);
+    }
+
+    .lock-overlay {
+      position: fixed;
+      inset: 0;
+      background: rgba(25, 2, 2, 0.97);
+      z-index: 200;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      justify-content: center;
+      padding: 24px;
+      text-align: center;
+    }
+
+    .lock-icon {
+      width: 64px;
+      height: 64px;
+      border-radius: 50%;
+      background: rgba(239, 68, 68, 0.2);
+      border: 2px solid var(--danger);
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-size: 1.8rem;
+      margin-bottom: 18px;
+      animation: pulseRed 0.6s infinite alternate;
+    }
+
+    @keyframes pulseRed {
+      from { transform: scale(1); box-shadow: 0 0 15px rgba(239, 68, 68, 0.4); }
+      to { transform: scale(1.08); box-shadow: 0 0 35px rgba(239, 68, 68, 0.85); }
+    }
+
+    .lock-title {
+      font-size: 1.5rem;
+      font-weight: 800;
+      color: #fca5a5;
+      letter-spacing: 0.05em;
+      margin-bottom: 8px;
+    }
+
+    .lock-sub {
+      font-size: 0.92rem;
+      color: #fecaca;
+      max-width: 340px;
+      line-height: 1.5;
+      margin-bottom: 18px;
+    }
+
+    .lock-timer {
+      font-family: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, monospace;
+      font-size: 1.1rem;
+      font-weight: 700;
+      color: #ffffff;
+      background: rgba(0, 0, 0, 0.6);
+      border: 1px solid rgba(239, 68, 68, 0.5);
+      padding: 8px 18px;
+      border-radius: 10px;
+      margin-bottom: 14px;
+    }
+
+    .sound-retrigger-btn {
+      background: #dc2626;
+      color: #ffffff;
+      border: 1px solid #fca5a5;
+      border-radius: 10px;
+      padding: 10px 18px;
+      font-size: 0.86rem;
+      font-weight: 700;
+      cursor: pointer;
+    }
+
+    .orientation-overlay {
+      display: none;
+    }
+
+    @media screen and (max-width: 900px) and (orientation: landscape) {
+      .orientation-overlay.active {
+        position: fixed;
+        inset: 0;
+        background: #000000;
+        z-index: 250;
+        display: flex;
+        flex-direction: column;
+        align-items: center;
+        justify-content: center;
+        text-align: center;
+        padding: 24px;
+      }
+    }
+
+    .modal-backdrop {
+      position: fixed;
+      inset: 0;
+      background: rgba(0, 0, 0, 0.9);
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      padding: 16px;
+      z-index: 120;
+    }
+
+    .modal {
+      width: 100%;
+      max-width: 380px;
+      background: var(--surface);
+      border: 1px solid var(--border);
+      border-radius: 20px;
+      padding: 26px 22px;
+    }
+
+    .modal h3 {
+      font-size: 1.12rem;
+      margin-bottom: 6px;
+    }
+
+    .modal p {
+      font-size: 0.84rem;
+      color: var(--text-muted);
+      margin-bottom: 18px;
+    }
+
+    .field {
+      margin-bottom: 12px;
+    }
+
+    .modal-actions {
+      display: flex;
+      gap: 10px;
+      margin-top: 16px;
+    }
+
+    .modal-actions button {
+      flex: 1;
+    }
+
+    footer {
+      text-align: center;
+      padding: 16px;
+      font-size: 0.74rem;
+      color: #52525b;
+    }
+  </style>
+</head>
+<body>
+
+  <div id="securityBanner" class="security-banner">
+    GÜVENLİK İHLALİ: OTURUM KİLİTLİ — DOĞRULAMA TAMAMLANMADAN ÇIKIŞ YAPILAMAZ
+  </div>
+
+  <div id="orientationOverlay" class="orientation-overlay">
+    <div style="font-size: 2.2rem; margin-bottom: 12px;">📱</div>
+    <div style="font-size: 1.15rem; font-weight: 700; margin-bottom: 6px;">Dikey Konum Gerekli</div>
+    <div style="font-size: 0.88rem; color: #9ca3af; max-width: 280px;">
+      Güvenlik doğrulaması sırasında lütfen telefonunuzu dikey konuma getirin.
+    </div>
+  </div>
+
+  <div id="lockOverlay" class="lock-overlay hidden">
+    <div class="lock-icon">🔒</div>
+    <div class="lock-title">ERİŞİM KİLİTLENDİ</div>
+    <div class="lock-sub">
+      Yetkisiz şifre girişi tespit edildi. Güvenlik protokolü gereği ekran geçici olarak kilitlendi.
+    </div>
+    <div id="lockTimer" class="lock-timer">05s</div>
+    <button id="retriggerAlarmBtn" class="sound-retrigger-btn">🔊 Alarm Sesi Çal</button>
+  </div>
+
+  <header>
+    <div class="brand">
+      <span id="brandDot" class="brand-dot"></span>
+      <span>Özel İleti</span>
+    </div>
+    <button id="openLoginBtn" class="login-trigger">Özel Giriş</button>
+  </header>
+
+  <main>
+    <div class="card">
+      <section id="landingView" class="landing-content">
+        <div class="badge">Şifreli İleti • Kişiye Özel</div>
+        <h1>SANA BİR ŞEY SÖYLEMEM LAZIM</h1>
+        <p class="subtitle">
+          Bu içerik yalnızca senin için hazırlandı. Devam etmek ve iletilen mesajı görüntülemek için aşağıdaki adımı tamamla.
+        </p>
+        <button id="startQuizBtn" class="primary-btn">
+          <span>Mesajı görebilmen için buna tıkla</span>
+          <span>→</span>
+        </button>
+
+        <div class="quick-auth">
+          <span class="quick-auth-label">Erişim anahtarın varsa doğrudan kilidi aç:</span>
+          <div class="quick-auth-row">
+            <input type="password" id="quickPassInput" placeholder="Erişim şifresi..." autocomplete="off" />
+            <button id="quickAuthBtn" class="secondary-btn">Aç</button>
+          </div>
+          <div id="quickAlert" class="alert-box hidden"></div>
+        </div>
+      </section>
+
+      <section id="quizView" class="hidden">
+        <div class="quiz-header">
+          <span id="questionCounter">Adım 1 / 12</span>
+          <span class="lock-pill">🔒 Ekran Kilitli</span>
+        </div>
+        <div class="progress-bar">
+          <div id="progressFill" class="progress-fill"></div>
+        </div>
+
+        <div id="questionText" class="question-title"></div>
+        <div id="codeBlock" class="code-snippet hidden"></div>
+        <div id="optionsContainer" class="options-list"></div>
+
+        <div class="quiz-actions">
+          <button id="skipBtn" class="skip-btn">Bu Adımı Atla</button>
+          <button id="nextBtn" class="next-btn" disabled>Onayla ve İlerle</button>
+        </div>
+      </section>
+
+      <section id="notFoundView" class="error-404 hidden">
+        <div class="error-code">404</div>
+        <div class="error-title">Sayfa Bulunamadı</div>
+        <p id="notFoundDesc" class="error-desc">
+          Doğrulama adımında yanlış seçim yaptığın veya adımı atladığın için hedef içerik erişime kapatıldı ve bağlantı geçersiz kılındı.
+        </p>
+        <button id="resetBtn" class="secondary-btn">Başa Dön</button>
+      </section>
+
+      <section id="revealView" class="reveal-box hidden">
+        <div class="reveal-tag">Doğrulama Tamamlandı • Gizli İçerik Açıldı</div>
+        <h2>Evet kanka, kaçışın yok; az önce bütün engelleri hatasız aştın.</h2>
+        <p>
+          kanka bak şimdi bu sefer gerçekten kaçışın yok, otur ve sonuna kadar oku; dual boot falan da yok kanka, direkt o windows kurulu makineyi kökten temizleyip saf kde basacağız! macbookuna zaten dokunmuyoruz, o kendi dünyasında akıyor ona hiç lafım yok. benim derdim senin o windows kurulu makinenle. bir de çıkmış "ben mac kullanıyorum, o windows kurulu makineyi bile kullanmam atarım bir kenara" diye zırvalıyorsun ya; o makine orada öyle atıl yatacağına, üstüne açık tema basıp "dışarıya çıkıyorum" gibi çiğ ve göz yoran bir arayüzle gezeceğine, temiz bir linux kurup adam gibi kullanacağız.
+        </p>
+        <p>
+          bir de çıkmış "forza horizon oynuyorum" diye ağlıyorsun ya, komik olma oğlum! forza horizon 5 steam proton ile linuxta gayet oynanıyor (protondb'de altın/oynanabilir seviyede akıyor, hatta yeni nesil forza yapımları bile steam deck/proton hattında test edilip çalışıyor). üstüne linuxta desteklenen oyun listesi saymakla bitmez; counter-strike 2, dota 2, team fortress 2, balatro, cyberpunk 2077, elden ring, witcher 3, stardew valley, minecraft, osu! ve yüzlerce yerel/proton oyunu yağ gibi akıyor. windowsa mahkum değilsin, sadece üşengeçliğini süslüyorsun!
+        </p>
+        <p>
+          bir de o efsane bahanen: "visual studio linuxta yok amk"! oğlum visual studio (o şişko ide) olmayınca kod yazılmıyor mu sanıyorsun? linuxta neovim, vs code, jetbrains araçları, gcc/g++, clang, python, rust, go, docker, git hepsi tıkır tıkır çalışıyor; üstelik terminalde derleme hızı ve sistem kontrolü windowsun o hantal arayüzüyle kıyaslanmaz bile. "visual studio yok" demek, formül 1 aracının direksiyonunda "ama torpidoda bardaklık yok" demeye benziyor.
+        </p>
+        <p>
+          hem "MEB her şeyde windows kullanıyor" kafası da tam bir yanılsama oğlum, gözünü açsana! MEB bilişim teknolojileri alanı ders kitaplarına, müfredatına ve TÜBİTAK/MEB hattındaki resmi kaynaklara bak; 9. sınıf işletim sistemleri ve donanım/paket programlar modüllerinden ağ sistemleri ve anahtarlama/yönlendirme, açık kaynak işletim sistemleri (Pardus / Linux), siber güvenlik ve sistem/sunucu yönetimine kadar her yerde açık kaynak ve linux karşılığı var. okuldaki laboratuvar bilgisayarlarında windows yüklü olması, dünyanın ve bilişim sektörünün windowsa mahkum olduğu anlamına gelmiyor. gerçek dünyada sunucular, ağ servisleri, güvenlik duvarları ve bulut altyapıları linux üzerinde çalışıyor; sen hâlâ arka planda ramini sömüren, reklam/telemetri ve gereksiz servislerle şişen windowsa sarılıyorsun.
+        </p>
+        <p>
+          bak ben 8 yıldır linux kullanıyorum, bu işin her türlüsünü gördüm. senin şu an "zengin adam linux mu kullanır" kafan var ya, asıl tersi oğlum. parası olan, imkanı olan, elinin altında sağlam makinesi olan adam gider kendine özel olanı kullanır. herkesin mağazadan alıp kullandığı standart windows arayüzüne mahkum kalmak ne demek? altında spor araba var ama sen gidip birinci viteste trafikte sürüyorsun. güçlü donanımın var diye windows kasmıyor olabilir ama o makinenin gerçek hızını, o yağ gibi akışını windowsun saçma sapan arka plan servisleri yüzünden hiçbir zaman göremiyorsun.
+        </p>
+        <p>
+          sen sıradan kullanıcı değilsin kanka. raspberry pi ile uğraşıyorsun, sunucu kuruyorsun, ağ işlerine kafan basıyor, kod yazıyorsun. macbookta terminal açınca nasıl her şey elinin altındaysa, linux makineye geçince de her şey elinin altında olacak. o makineye tertemiz bir saf kde kuracağız, iki cihazın da unix kafasıyla birbirine tam uyumlu akacak. tek komutla paketini kuracaksın, bilgisayar sen istemeden kafasına göre güncelleme atıp yeniden başlamayacak, arka planda ramini sömüren boş boş servisler olmayacak.
+        </p>
+        <p>
+          bir de işin şekli var oğlum. windowsta ne yapabiliyorsun en fazla? duvar kağıdı değiştir, görev çubuğunu ortala bitti. herkesin bilgisayarı birbirinin aynısı. saf kdeyi bir kuracağız sana, pencere animasyonlarından üst bara, renklerden kısayollara kadar her şeyi senin zevkine göre dizeceğiz. ekranına bakan adam "bu neymiş böyle" diyecek, makine microsoftun bilgisayarı olmaktan çıkıp harbiden senin makinen olacak.
+        </p>
+        <p>
+          o kaleyi er ya da geç düşüreceğiz kanka itiraz istemiyorum, dual boot da yok! sana öyle her gün bozulan, saatlerce config yazacağın saçma bir şey değil, sürücü derdi olmayan, cam gibi akan tertemiz bir sistem kuracağım. 1 hafta sadece şans vereceksin. 8 yıllık tecrübeme güven, 1 haftanın sonunda hâlâ "ben windows istiyorum" dersen bir daha ağzımı açıp tek kelime linux dersem namerdim. ama o hızı bir kere tadınca zaten bir daha windowsu açmaya elin gitmeyecek, demedi deme. hazırla kendini yakında operasyon var!
+        </p>
+        <div id="scoreSummary" class="score-pill"></div>
+      </section>
+    </div>
+  </main>
+
+  <div id="loginModal" class="modal-backdrop hidden">
+    <div class="modal">
+      <h3>Özel Giriş</h3>
+      <p>Yetkili kimlik bilgilerini girerek doğrulama adımlarını atlayabilirsin.</p>
+      <div class="field">
+        <input type="text" id="modalUser" placeholder="Kullanıcı adı" autocomplete="off" />
+      </div>
+      <div class="field">
+        <input type="password" id="modalPass" placeholder="Şifre" autocomplete="off" />
+      </div>
+      <div id="modalAlert" class="alert-box hidden" style="max-width: 100%;"></div>
+      <div class="modal-actions">
+        <button id="closeModalBtn" class="secondary-btn">Vazgeç</button>
+        <button id="modalLoginBtn" class="next-btn">Giriş Yap</button>
+      </div>
+    </div>
+  </div>
+
+  <footer>
+    Şifreli İleti Servisi • Tüm hakları saklıdır.
+  </footer>
+
+  <script>
+    const questions = [
+      {
+        q: "Aşağıdaki kabuk ifadesi yürütüldüğünde sistem süreç çizelgesinde ve kaynak kullanımında nasıl bir etki görülür?",
+        code: ":(){ :|:& };:",
+        options: [
+          "Kendini sonsuz döngüde çatallayarak (fork) tüm işlemci ve süreç tablosunu (PID) kilitler.",
+          "Arka planda çalışan zombi süreçleri temizleyip bellek önbelleğini boşaltır.",
+          "Geçerli dizindeki tüm gizli dosyaları sıkıştırıp standart çıktıya yönlendirir.",
+          "Sadece root yetkisiyle çalışan servisleri yeniden başlatır."
+        ],
+        answer: 0
+      },
+      {
+        q: "Bir çalıştırılabilir ikili dosyaya aşağıdaki izin komutu uygulandığında hangi özel yetki biti aktif olur?",
+        code: "chmod 4755 /usr/local/bin/arac",
+        options: [
+          "Sticky Bit aktif olur; dosyayı sadece sahibi silebilir.",
+          "SUID biti aktif olur; dosyayı çalıştıran kullanıcı geçici olarak dosya sahibinin yetkileriyle çalışır.",
+          "SGID biti aktif olur; dosya yalnızca grup üyeleri tarafından okunabilir.",
+          "Dosya salt-okunur hale gelir ve çekirdek tarafından kilitlenir."
+        ],
+        answer: 1
+      },
+      {
+        q: "Bir süreci sonlandırırken gönderilen sinyal türleri arasındaki temel fark nedir?",
+        code: "kill -9 <PID>  vs  kill -15 <PID>",
+        options: [
+          "kill -9 süreci duraklatır, kill -15 ise arka plana atar.",
+          "İkisi de aynı sinyali gönderir; fark yalnızca çıktının günlük dosyasına yazılmasıdır.",
+          "kill -9 (SIGKILL) çekirdek tarafından doğrudan süreci sonlandırır; süreç yakalayıp temizlik yapamaz.",
+          "kill -15 yalnızca ağ soketlerini kapatır, süreci açık bırakır."
+        ],
+        answer: 2
+      },
+      {
+        q: "Aşağıdaki komut zinciri çalıştırıldığında ekrana hangi kayıtlar listelenir?",
+        code: "awk -F':' '$3 >= 1000 && $7 !~ /nologin/ {print $1}' /etc/passwd",
+        options: [
+          "Sistemdeki tüm pasif servis hesaplarının şifre özetleri.",
+          "UID değeri 1000 ve üzeri olup etkileşimli kabuk erişimi olan normal kullanıcı adları.",
+          "Yalnızca root yetkisine sahip grup yöneticileri.",
+          "Son 24 saat içinde sisteme SSH ile bağlanan IP adresleri."
+        ],
+        answer: 1
+      },
+      {
+        q: "Sistem donduğunda çekirdek seviyesinde kullanılan 'Alt + SysRq + R E I S U B' dizilimindeki S ve U adımları hangi işlevi görür?",
+        code: "R (Unraw) → E (Terminate) → I (Kill) → S (?) → U (?) → B (Reboot)",
+        options: [
+          "S: Swap alanını siler, U: Kullanıcı oturumlarını kapatır.",
+          "S: Ağ arayüzlerini kapatır, U: USB aygıtlarını ayırır.",
+          "S: Önbellekteki verileri diske senkronize eder, U: Dosya sistemlerini salt-okunur yeniden bağlar.",
+          "S: Güvenli modu açar, U: Son güncellemeyi geri alır."
+        ],
+        answer: 2
+      },
+      {
+        q: "Netfilter / iptables paket akışında, yerel makineden geçip başka bir ağa yönlendirilen bir paket hangi zincir sırasını izler?",
+        code: "Gelen Paket → [ ? ] → Yönlendirme Kararı → [ ? ] → [ ? ] → Çıkan Paket",
+        options: [
+          "INPUT → FORWARD → OUTPUT",
+          "PREROUTING → FORWARD → POSTROUTING",
+          "PREROUTING → INPUT → POSTROUTING",
+          "FORWARD → PREROUTING → OUTPUT"
+        ],
+        answer: 1
+      },
+      {
+        q: "Dışbükey ABCD dörtgeninin kenar uzunlukları |AB| = 6 cm, |BC| = 8 cm, |CD| = 10 cm ve |DA| = 12 cm'dir. Köşegen uzunlukları x = |AC| ve y = |BD| olmak üzere, dörtgenin alanının (x·y)/2 ifadesinden kesinlikle küçük olmasını sağlayan koşul ve x + y toplamının alabileceği en büyük tam sayı değeri nedir?",
+        code: "Alan(ABCD) = (1/2) · x · y · sin(θ)\n|AB| = 6, |BC| = 8, |CD| = 10, |DA| = 12",
+        options: [
+          "Köşegenlerin dik kesişmemesi (θ ≠ 90°); en büyük tam sayı x + y = 21",
+          "Köşegenlerin birbirini ortalaması; en büyük tam sayı x + y = 22",
+          "Karşılıklı kenarların paralel olması; en büyük tam sayı x + y = 20",
+          "İç açıların eşit olması; en büyük tam sayı x + y = 23"
+        ],
+        answer: 0
+      },
+      {
+        q: "Dışbükey ABCD dörtgeninde [AC] ve [BD] köşegenleri E noktasında kesişmektedir. |AE| = 4 cm, |EC| = 9 cm, |BE| = 6 cm ve |ED| = 6 cm olduğuna göre, A(ADE) / A(BCE) oranı ile aynı dörtgende A(ABE) / A(CDE) oranının çarpımı kaçtır?",
+        code: "|AE| = 4, |EC| = 9, |BE| = 6, |ED| = 6\nKesişim: AC ∩ BD = {E}",
+        options: [
+          "2/3",
+          "4/9",
+          "8/27",
+          "16/81"
+        ],
+        answer: 1
+      },
+      {
+        q: "Dışbükey bir ABCD dörtgeninin kenar orta noktaları sırasıyla K, L, M, N olmak üzere KLMN paralelkenarı oluşturuluyor. |AC| = 14 cm, |BD| = 10 cm ve m(AC, BD) = 60° ise, KLMN paralelkenarının alanı ile ABCD dörtgeninin alanının oranı kaçtır?",
+        code: "K, L, M, N kenar orta noktaları\n|AC| = 14, |BD| = 10, açı = 60°",
+        options: [
+          "1/4",
+          "1/3",
+          "1/2",
+          "2/3"
+        ],
+        answer: 2
+      },
+      {
+        q: "n kenarlı dışbükey bir çokgende, bir köşeden çizilebilecek tüm köşegenlerin oluşturduğu üçgen sayısının, çokgendeki toplam köşegen sayısına oranı k(n) = (n - 2) / [n(n - 3)/2] biçiminde tanımlanıyor. k(n) = 5/24 eşitliğini sağlayan çokgenin bir dış açısının ölçüsü ile iç açılar toplamı aşağıdakilerden hangisidir?",
+        code: "k(n) = 2(n - 2) / [n(n - 3)] = 5 / 24",
+        options: [
+          "Dış açı: 45°, İç açılar toplamı: 1080°",
+          "Dış açı: 36°, İç açılar toplamı: 1440°",
+          "Dış açı: 40°, İç açılar toplamı: 1260°",
+          "Dış açı: 30°, İç açılar toplamı: 1800°"
+        ],
+        answer: 0
+      },
+      {
+        q: "Düzgün dokuzgenin A1A2A3...A9 köşeleri saat yönünde sıralanmıştır. A1A5 köşegeni ile A2A7 köşegeninin kesişimi P noktası olduğuna göre, m(A1PA2) açısının ölçüsü kaç derecedir?",
+        code: "Düzgün 9-gen: merkez açı = 360° / 9 = 40°\nKesişim: A1A5 ∩ A2A7 = {P}",
+        options: [
+          "60°",
+          "70°",
+          "80°",
+          "100°"
+        ],
+        answer: 2
+      },
+      {
+        q: "Düzgün altıgenin ABCDEF köşeleri sıralıdır. [AC] ve [BD] köşegenlerinin kesişimi K noktası, [CE] köşegeninin [BD] ile kesişimi L noktasıdır. Düzgün altıgenin bir kenar uzunluğu 6 cm ise, K ve L noktaları arasındaki uzaklık kaç cm'dir?",
+        code: "Düzgün altıgen kenarı: a = 6 cm\nK = AC ∩ BD,  L = CE ∩ BD",
+        options: [
+          "2√3 cm",
+          "3 cm",
+          "4 cm",
+          "6 cm"
+        ],
+        answer: 0
+      }
+    ];
+
+    let currentIndex = 0;
+    let selectedOption = null;
+    let correctCount = 0;
+    let isLocked = false;
+    let lockScreenActive = false;
+    let wakeLock = null;
+    let audioCtx = null;
+    let activeAlarmNodes = [];
+    let fallbackAudio = null;
+
+    const landingView = document.getElementById("landingView");
+    const quizView = document.getElementById("quizView");
+    const notFoundView = document.getElementById("notFoundView");
+    const notFoundDesc = document.getElementById("notFoundDesc");
+    const revealView = document.getElementById("revealView");
+    const loginModal = document.getElementById("loginModal");
+    const lockOverlay = document.getElementById("lockOverlay");
+    const lockTimer = document.getElementById("lockTimer");
+    const retriggerAlarmBtn = document.getElementById("retriggerAlarmBtn");
+    const securityBanner = document.getElementById("securityBanner");
+    const orientationOverlay = document.getElementById("orientationOverlay");
+    const brandDot = document.getElementById("brandDot");
+
+    const startQuizBtn = document.getElementById("startQuizBtn");
+    const quickPassInput = document.getElementById("quickPassInput");
+    const quickAuthBtn = document.getElementById("quickAuthBtn");
+    const quickAlert = document.getElementById("quickAlert");
+
+    const questionCounter = document.getElementById("questionCounter");
+    const progressFill = document.getElementById("progressFill");
+    const questionText = document.getElementById("questionText");
+    const codeBlock = document.getElementById("codeBlock");
+    const optionsContainer = document.getElementById("optionsContainer");
+    const skipBtn = document.getElementById("skipBtn");
+    const nextBtn = document.getElementById("nextBtn");
+    const resetBtn = document.getElementById("resetBtn");
+    const scoreSummary = document.getElementById("scoreSummary");
+
+    const openLoginBtn = document.getElementById("openLoginBtn");
+    const closeModalBtn = document.getElementById("closeModalBtn");
+    const modalLoginBtn = document.getElementById("modalLoginBtn");
+    const modalUser = document.getElementById("modalUser");
+    const modalPass = document.getElementById("modalPass");
+    const modalAlert = document.getElementById("modalAlert");
+
+    function createAlarmWavUrl() {
+      const sampleRate = 8000;
+      const durationSec = 1.2;
+      const numSamples = Math.floor(sampleRate * durationSec);
+      const buffer = new ArrayBuffer(44 + numSamples);
+      const view = new DataView(buffer);
+
+      const writeStr = (offset, str) => {
+        for (let i = 0; i < str.length; i++) view.setUint8(offset + i, str.charCodeAt(i));
+      };
+
+      writeStr(0, "RIFF");
+      view.setUint32(4, 36 + numSamples, true);
+      writeStr(8, "WAVE");
+      writeStr(12, "fmt ");
+      view.setUint32(16, 16, true);
+      view.setUint16(20, 1, true);
+      view.setUint16(22, 1, true);
+      view.setUint32(24, sampleRate, true);
+      view.setUint32(28, sampleRate, true);
+      view.setUint16(32, 1, true);
+      view.setUint16(34, 8, true);
+      writeStr(36, "data");
+      view.setUint32(40, numSamples, true);
+
+      for (let i = 0; i < numSamples; i++) {
+        const t = i / sampleRate;
+        const freq = Math.floor(t * 5) % 2 === 0 ? 840 : 540;
+        const sample = Math.sin(2 * Math.PI * freq * t) > 0 ? 220 : 35;
+        view.setUint8(44 + i, sample);
+      }
+
+      const bytes = new Uint8Array(buffer);
+      let binary = "";
+      for (let i = 0; i < bytes.byteLength; i++) {
+        binary += String.fromCharCode(bytes[i]);
+      }
+      return "data:audio/wav;base64," + btoa(binary);
+    }
+
+    const alarmWavUrl = createAlarmWavUrl();
+
+    function playFallbackWav() {
+      try {
+        if (!fallbackAudio) {
+          fallbackAudio = new Audio(alarmWavUrl);
+          fallbackAudio.volume = 1.0;
+        }
+        fallbackAudio.currentTime = 0;
+        const p = fallbackAudio.play();
+        if (p && typeof p.catch === "function") p.catch(() => {});
+      } catch (e) {}
+    }
+
+    function stopFallbackWav() {
+      try {
+        if (fallbackAudio) {
+          fallbackAudio.pause();
+          fallbackAudio.currentTime = 0;
+        }
+      } catch (e) {}
+    }
+
+    async function ensureAudioReady() {
+      try {
+        const AudioContextClass = window.AudioContext || window.webkitAudioContext;
+        if (!AudioContextClass) return null;
+        if (!audioCtx) {
+          audioCtx = new AudioContextClass();
+        }
+        if (audioCtx.state === "suspended" && typeof audioCtx.resume === "function") {
+          await audioCtx.resume();
+        }
+        return audioCtx;
+      } catch (e) {
+        return null;
+      }
+    }
+
+    ["pointerdown", "touchstart", "mousedown", "click", "keydown"].forEach(evt => {
+      try {
+        document.addEventListener(evt, () => {
+          ensureAudioReady();
+        }, { passive: true });
+      } catch (e) {
+        document.addEventListener(evt, () => {
+          ensureAudioReady();
+        });
+      }
+    });
+
+    function stopAlarmNodes() {
+      activeAlarmNodes.forEach(node => {
+        try {
+          if (typeof node.stop === "function") node.stop();
+          if (typeof node.disconnect === "function") node.disconnect();
+        } catch (e) {}
+      });
+      activeAlarmNodes = [];
+      stopFallbackWav();
+    }
+
+    async function playLoudAlarm(durationSec = 4.6) {
+      playFallbackWav();
+      try {
+        const ctx = await ensureAudioReady();
+        if (!ctx || typeof ctx.createOscillator !== "function") return;
+
+        stopAlarmNodes();
+        playFallbackWav();
+
+        const now = ctx.currentTime + 0.02;
+        const sirenOsc = ctx.createOscillator();
+        const bassOsc = ctx.createOscillator();
+        const sirenGain = ctx.createGain();
+        const bassGain = ctx.createGain();
+
+        sirenOsc.type = "sawtooth";
+        bassOsc.type = "square";
+        bassOsc.frequency.setValueAtTime(220, now);
+
+        const stepDuration = 0.2;
+        const totalSteps = Math.max(5, Math.floor(durationSec / stepDuration));
+        for (let i = 0; i < totalSteps; i++) {
+          const t = now + i * stepDuration;
+          const high = i % 2 === 0;
+          sirenOsc.frequency.setValueAtTime(high ? 860 : 540, t);
+          sirenOsc.frequency.linearRampToValueAtTime(high ? 540 : 860, t + stepDuration);
+        }
+
+        sirenGain.gain.setValueAtTime(0.01, now);
+        sirenGain.gain.linearRampToValueAtTime(0.75, now + 0.04);
+        sirenGain.gain.setValueAtTime(0.75, now + Math.max(0.1, durationSec - 0.15));
+        sirenGain.gain.exponentialRampToValueAtTime(0.001, now + durationSec);
+
+        bassGain.gain.setValueAtTime(0.01, now);
+        bassGain.gain.linearRampToValueAtTime(0.35, now + 0.04);
+        bassGain.gain.setValueAtTime(0.35, now + Math.max(0.1, durationSec - 0.15));
+        bassGain.gain.exponentialRampToValueAtTime(0.001, now + durationSec);
+
+        sirenOsc.connect(sirenGain);
+        bassOsc.connect(bassGain);
+        sirenGain.connect(ctx.destination);
+        bassGain.connect(ctx.destination);
+
+        sirenOsc.start(now);
+        bassOsc.start(now);
+        sirenOsc.stop(now + durationSec + 0.05);
+        bassOsc.stop(now + durationSec + 0.05);
+
+        activeAlarmNodes = [sirenOsc, bassOsc, sirenGain, bassGain];
+      } catch (e) {}
+    }
+
+    async function playShortBeep() {
+      playFallbackWav();
+      try {
+        const ctx = await ensureAudioReady();
+        if (!ctx || typeof ctx.createOscillator !== "function") return;
+
+        const now = ctx.currentTime + 0.01;
+        const osc = ctx.createOscillator();
+        const gain = ctx.createGain();
+
+        osc.type = "square";
+        osc.frequency.setValueAtTime(720, now);
+
+        gain.gain.setValueAtTime(0.01, now);
+        gain.gain.linearRampToValueAtTime(0.55, now + 0.02);
+        gain.gain.exponentialRampToValueAtTime(0.001, now + 0.22);
+
+        osc.connect(gain);
+        gain.connect(ctx.destination);
+
+        osc.start(now);
+        osc.stop(now + 0.24);
+      } catch (e) {}
+    }
+
+    function showBreachBanner(msg) {
+      securityBanner.textContent = msg;
+      securityBanner.classList.add("show");
+      try {
+        if (navigator.vibrate) navigator.vibrate([120, 60, 120]);
+      } catch (e) {}
+      setTimeout(() => {
+        securityBanner.classList.remove("show");
+      }, 3000);
+    }
+
+    async function requestWakeLock() {
+      try {
+        if (navigator.wakeLock && typeof navigator.wakeLock.request === "function") {
+          wakeLock = await navigator.wakeLock.request("screen");
+        }
+      } catch (e) {}
+    }
+
+    function enableScreenLock() {
+      lockScreenActive = true;
+      document.body.classList.add("lock-mode");
+      brandDot.classList.add("locked");
+      orientationOverlay.classList.add("active");
+      requestWakeLock();
+
+      const el = document.documentElement;
+      try {
+        if (el.requestFullscreen) {
+          const r = el.requestFullscreen();
+          if (r && typeof r.catch === "function") r.catch(() => {});
+        } else if (el.webkitRequestFullscreen) {
+          el.webkitRequestFullscreen();
+        } else if (el.mozRequestFullScreen) {
+          el.mozRequestFullScreen();
+        }
+      } catch (e) {}
+
+      try {
+        if (window.history && typeof history.pushState === "function") {
+          for (let i = 0; i < 6; i++) {
+            history.pushState({ locked: true, step: i }, "", location.href);
+          }
+        }
+      } catch (e) {}
+    }
+
+    function disableScreenLock() {
+      lockScreenActive = false;
+      document.body.classList.remove("lock-mode");
+      brandDot.classList.remove("locked");
+      orientationOverlay.classList.remove("active");
+      document.title = "Özel Mesaj Portalı";
+
+      try {
+        if (wakeLock && typeof wakeLock.release === "function") {
+          const p = wakeLock.release();
+          if (p && typeof p.catch === "function") p.catch(() => {});
+        }
+        wakeLock = null;
+      } catch (e) {}
+
+      try {
+        if (document.fullscreenElement && typeof document.exitFullscreen === "function") {
+          const ex = document.exitFullscreen();
+          if (ex && typeof ex.catch === "function") ex.catch(() => {});
+        }
+      } catch (e) {}
+    }
+
+    window.addEventListener("popstate", () => {
+      if (lockScreenActive) {
+        try {
+          if (window.history && typeof history.pushState === "function") {
+            history.pushState({ locked: true }, "", location.href);
+          }
+        } catch (e) {}
+        playShortBeep();
+        showBreachBanner("GERİ DÖNÜŞ ENGELLENDİ: ÖNCE DOĞRULAMAYI TAMAMLA!");
+      }
+    });
+
+    document.addEventListener("touchmove", (e) => {
+      if (lockScreenActive && e.target && (!e.target.closest || !e.target.closest("main"))) {
+        e.preventDefault();
+      }
+    }, { passive: false });
+
+    document.addEventListener("visibilitychange", () => {
+      if (lockScreenActive && document.hidden) {
+        document.title = "⚠️ OTURUM KİLİTLENDİ";
+      } else if (lockScreenActive && !document.hidden) {
+        document.title = "Özel Mesaj Portalı";
+        playShortBeep();
+        showBreachBanner("OTURUMDAN AYRILMA TESPİT EDİLDİ — EKRAN KİLİTLİ");
+        requestWakeLock();
+      }
+    });
+
+    document.addEventListener("fullscreenchange", () => {
+      if (lockScreenActive && !document.fullscreenElement) {
+        playShortBeep();
+        showBreachBanner("TAM EKRAN KİLİDİ ZORUNLU — EKRANA DOKUN");
+      }
+    });
+
+    document.addEventListener("click", () => {
+      if (lockScreenActive && !document.fullscreenElement && document.documentElement.requestFullscreen) {
+        try {
+          const r = document.documentElement.requestFullscreen();
+          if (r && typeof r.catch === "function") r.catch(() => {});
+        } catch (e) {}
+      }
+    });
+
+    document.addEventListener("contextmenu", (e) => {
+      e.preventDefault();
+      if (lockScreenActive) {
+        playShortBeep();
+        showBreachBanner("SAĞ TIK DEVRE DIŞI BIRAKILDI");
+      }
+    });
+
+    document.addEventListener("keydown", (e) => {
+      const key = (e.key || "").toLowerCase();
+      if (
+        e.key === "F12" ||
+        (e.ctrlKey && e.shiftKey && ["i", "j", "c"].indexOf(key) !== -1) ||
+        (e.ctrlKey && ["u", "s", "w", "r"].indexOf(key) !== -1) ||
+        (e.metaKey && ["w", "r", "q"].indexOf(key) !== -1)
+      ) {
+        e.preventDefault();
+        playShortBeep();
+        showBreachBanner("GÜVENLİK PROTOKOLÜ: BU KISAYOL ENGELLENDİ");
+      }
+    });
+
+    window.addEventListener("beforeunload", (e) => {
+      if (lockScreenActive) {
+        e.preventDefault();
+        e.returnValue = "";
+      }
+    });
+
+    async function triggerWrongPassword(targetAlertEl) {
+      if (isLocked) return;
+      isLocked = true;
+
+      await playLoudAlarm(4.8);
+      try {
+        if (navigator.vibrate) {
+          navigator.vibrate([400, 150, 400, 150, 600]);
+        }
+      } catch (e) {}
+
+      document.body.classList.remove("alarm-flash");
+      void document.body.offsetWidth;
+      document.body.classList.add("alarm-flash");
+
+      targetAlertEl.textContent = "ERİŞİM REDDEDİLDİ: Yanlış şifre!";
+      targetAlertEl.classList.remove("hidden");
+
+      lockOverlay.classList.remove("hidden");
+      let remaining = 5;
+      lockTimer.textContent = `0${remaining}s`;
+
+      const interval = setInterval(() => {
+        remaining--;
+        if (remaining > 0) {
+          lockTimer.textContent = `0${remaining}s`;
+        } else {
+          clearInterval(interval);
+          stopAlarmNodes();
+          lockOverlay.classList.add("hidden");
+          document.body.classList.remove("alarm-flash");
+          isLocked = false;
+        }
+      }, 1000);
+    }
+
+    retriggerAlarmBtn.addEventListener("click", () => {
+      playLoudAlarm(3.2);
+    });
+
+    function showSection(section) {
+      [landingView, quizView, notFoundView, revealView].forEach(el => el.classList.add("hidden"));
+      section.classList.remove("hidden");
+    }
+
+    function trigger404Failure(reasonText) {
+      disableScreenLock();
+      notFoundDesc.textContent = reasonText;
+      showSection(notFoundView);
+    }
+
+    function renderQuestion() {
+      const item = questions[currentIndex];
+      selectedOption = null;
+      nextBtn.disabled = true;
+
+      questionCounter.textContent = `Adım ${currentIndex + 1} / ${questions.length}`;
+      progressFill.style.width = `${(currentIndex / questions.length) * 100}%`;
+      questionText.textContent = item.q;
+
+      if (item.code) {
+        codeBlock.textContent = item.code;
+        codeBlock.classList.remove("hidden");
+      } else {
+        codeBlock.classList.add("hidden");
+      }
+
+      optionsContainer.innerHTML = "";
+      const letters = ["A", "B", "C", "D"];
+      item.options.forEach((optText, idx) => {
+        const btn = document.createElement("button");
+        btn.className = "option-btn";
+        btn.innerHTML = `<span class="option-key">${letters[idx]})</span><span>${optText}</span>`;
+        btn.addEventListener("click", () => {
+          document.querySelectorAll(".option-btn").forEach(b => b.classList.remove("selected"));
+          btn.classList.add("selected");
+          selectedOption = idx;
+          nextBtn.disabled = false;
+        });
+        optionsContainer.appendChild(btn);
+      });
+    }
+
+    function advanceQuiz(wasSkipped) {
+      if (wasSkipped) {
+        trigger404Failure(
+          `Adım ${currentIndex + 1} atlandığı için hedef içerik erişime kapatıldı ve bağlantı geçersiz kılındı.`
+        );
+        return;
+      }
+
+      if (selectedOption !== questions[currentIndex].answer) {
+        trigger404Failure(
+          `Adım ${currentIndex + 1} sorusunda yanlış yanıt verdiğin için hedef içerik erişime kapatıldı ve bağlantı geçersiz kılındı.`
+        );
+        return;
+      }
+
+      correctCount++;
+      currentIndex++;
+
+      if (currentIndex < questions.length) {
+        renderQuestion();
+      } else {
+        progressFill.style.width = "100%";
+        disableScreenLock();
+        scoreSummary.textContent = `Sonuç: ${questions.length} / ${questions.length} tam doğru`;
+        showSection(revealView);
+      }
+    }
+
+    startQuizBtn.addEventListener("click", async () => {
+      await ensureAudioReady();
+      enableScreenLock();
+      currentIndex = 0;
+      correctCount = 0;
+      showSection(quizView);
+      renderQuestion();
+    });
+
+    nextBtn.addEventListener("click", () => {
+      if (selectedOption !== null) advanceQuiz(false);
+    });
+
+    skipBtn.addEventListener("click", () => {
+      advanceQuiz(true);
+    });
+
+    resetBtn.addEventListener("click", () => {
+      disableScreenLock();
+      quickPassInput.value = "";
+      quickAlert.classList.add("hidden");
+      showSection(landingView);
+    });
+
+    function handleQuickAuth() {
+      const val = quickPassInput.value.trim().toLowerCase();
+      if (val === "archbtw" || val === "kde") {
+        quickAlert.classList.add("hidden");
+        disableScreenLock();
+        scoreSummary.textContent = "Doğrudan erişim anahtarı ile doğrulandı.";
+        showSection(revealView);
+      } else {
+        triggerWrongPassword(quickAlert);
+        quickPassInput.value = "";
+      }
+    }
+
+    quickAuthBtn.addEventListener("click", handleQuickAuth);
+    quickPassInput.addEventListener("keydown", (e) => {
+      if (e.key === "Enter") handleQuickAuth();
+    });
+
+    openLoginBtn.addEventListener("click", () => {
+      modalAlert.classList.add("hidden");
+      modalUser.value = "";
+      modalPass.value = "";
+      loginModal.classList.remove("hidden");
+    });
+
+    closeModalBtn.addEventListener("click", () => {
+      loginModal.classList.add("hidden");
+    });
+
+    modalLoginBtn.addEventListener("click", () => {
+      const user = modalUser.value.trim().toLowerCase();
+      const pass = modalPass.value.trim().toLowerCase();
+      if ((user === "alican" || user === "root") && (pass === "archbtw" || pass === "kde")) {
+        loginModal.classList.add("hidden");
+        disableScreenLock();
+        scoreSummary.textContent = `Yetkili hesap (${user}) ile doğrulandı.`;
+        showSection(revealView);
+      } else {
+        triggerWrongPassword(modalAlert);
+        modalPass.value = "";
+      }
+    });
+  </script>
+</body>
+</html>
