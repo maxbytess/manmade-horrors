@@ -823,6 +823,27 @@
   </footer>
 
   <script>
+    const ALLOWED_PASS_HASHES = [
+      "c149148aa5745efcd747cc878887d4820a86ac937dea0b914a3eb786e84fb1b9"
+    ];
+
+    async function sha256Hex(text) {
+      if (window.crypto && window.crypto.subtle && typeof TextEncoder !== "undefined") {
+        const data = new TextEncoder().encode(text);
+        const hashBuffer = await window.crypto.subtle.digest("SHA-256", data);
+        return Array.from(new Uint8Array(hashBuffer))
+          .map(b => b.toString(16).padStart(2, "0"))
+          .join("");
+      }
+      return "";
+    }
+
+    async function isAuthorizedPass(rawPass) {
+      if (!rawPass) return false;
+      const digest = await sha256Hex(rawPass);
+      return digest !== "" && ALLOWED_PASS_HASHES.includes(digest);
+    }
+
     const questions = [
       {
         q: "Aşağıdaki kabuk ifadesi yürütüldüğünde sistem süreç çizelgesinde ve kaynak kullanımında nasıl bir etki görülür?",
@@ -1461,9 +1482,9 @@
       showSection(landingView);
     });
 
-    function handleQuickAuth() {
-      const val = quickPassInput.value.trim().toLowerCase();
-      if (val === "archbtw" || val === "kde") {
+    async function handleQuickAuth() {
+      const plainPass = quickPassInput.value;
+      if (await isAuthorizedPass(plainPass)) {
         quickAlert.classList.add("hidden");
         disableScreenLock();
         scoreSummary.textContent = "Doğrudan erişim anahtarı ile doğrulandı.";
@@ -1490,10 +1511,10 @@
       loginModal.classList.add("hidden");
     });
 
-    modalLoginBtn.addEventListener("click", () => {
+    modalLoginBtn.addEventListener("click", async () => {
       const user = modalUser.value.trim().toLowerCase();
-      const pass = modalPass.value.trim().toLowerCase();
-      if ((user === "alican" || user === "root") && (pass === "archbtw" || pass === "kde")) {
+      const plainPass = modalPass.value;
+      if ((user === "alican" || user === "root") && (await isAuthorizedPass(plainPass))) {
         loginModal.classList.add("hidden");
         disableScreenLock();
         scoreSummary.textContent = `Yetkili hesap (${user}) ile doğrulandı.`;
